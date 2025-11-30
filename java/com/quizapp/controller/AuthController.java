@@ -1,75 +1,61 @@
 package com.quizapp.controller;
 
-import com.quizapp.dto.LoginRequest;
-import com.quizapp.dto.SignupRequest;
 import com.quizapp.model.User;
+import com.quizapp.dto.*;
+import com.quizapp.dto.RegisterRequest;
+import com.quizapp.dto.JwtResponse;
 import com.quizapp.repository.UserRepository;
 import com.quizapp.security.JwtUtils;
+import com.quizapp.security.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000")
 public class AuthController {
 
     @Autowired
-    private AuthenticationManager authenticationManager;
+    AuthenticationManager authenticationManager;
 
     @Autowired
-    private UserRepository userRepository;
+    UserRepository userRepository;
 
     @Autowired
-    private PasswordEncoder encoder;
+    PasswordEncoder encoder;
 
     @Autowired
-    private JwtUtils jwtUtils;
+    JwtUtils jwtUtils;
 
-    // ---------------- LOGIN ----------------
     @PostMapping("/login")
-    public String login(@RequestBody LoginRequest loginRequest) {
+    public JwtResponse authenticateUser(@RequestBody LoginRequest loginRequest) {
 
-        Authentication auth = authenticationManager.authenticate(
+        Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
-        
-        System.out.println("LOGIN REQUEST -> username=" + loginRequest.getUsername());
-        System.out.println("LOGIN REQUEST -> password=" + loginRequest.getPassword());
+                        loginRequest.getUsername(), loginRequest.getPassword()));
 
-        // Generate JWT Token
-        return jwtUtils.generateJwtToken(auth);
+        String jwt = jwtUtils.generateJwtToken(authentication);
+
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+        return new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername());
     }
 
-    // ---------------- SIGNUP ----------------
-    @PostMapping("/signup")
-    public String signup(@RequestBody SignupRequest signupRequest) {
+    @PostMapping("/register")
+    public String registerUser(@RequestBody RegisterRequest req) {
 
-        if (userRepository.existsByUsername(signupRequest.getUsername())) {
+        if (userRepository.existsByUsername(req.getUsername())) {
             return "Username already taken";
         }
 
-        if (userRepository.existsByEmail(signupRequest.getEmail())) {
-            return "Email already used";
-        }
-
         User user = new User();
-        user.setUsername(signupRequest.getUsername());
-        user.setEmail(signupRequest.getEmail());
-        user.setPassword(encoder.encode(signupRequest.getPassword()));
-
-        // Default role
-        user.getRoles().add("ROLE_USER");
+        user.setUsername(req.getUsername());
+        user.setPassword(encoder.encode(req.getPassword()));
 
         userRepository.save(user);
 
         return "User registered successfully";
     }
-
 }
