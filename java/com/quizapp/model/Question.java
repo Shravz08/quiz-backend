@@ -14,6 +14,8 @@ public class Question {
     @Column(columnDefinition = "TEXT")
     private String text;
     
+    private String subject; 
+    
     @ElementCollection
     @CollectionTable(name = "question_options", joinColumns = @JoinColumn(name="question_id"))
     @Column(name = "option_text")
@@ -22,8 +24,6 @@ public class Question {
     @Column(nullable = false)
     private Integer correctIndex; // e.g., 0-based index for correct option
 
-    private String subject; 
-    
     private String questionText;
     private String option1;
     private String option2;
@@ -104,4 +104,12 @@ public class Question {
     public void setQuiz(Quiz quiz) {
         this.quiz = quiz;
     }
+
+	public String getSubject() {
+		return subject;
+	}
+
+	public void setSubject(String subject) {
+		this.subject = subject;
+	}
 }

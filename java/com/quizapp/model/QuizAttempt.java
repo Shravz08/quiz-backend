@@ -2,7 +2,6 @@ package com.quizapp.model;
 
 import jakarta.persistence.*;
 import java.time.Instant;
-import java.util.Map;
 
 @Entity
 @Table(name = "quiz_attempts")
